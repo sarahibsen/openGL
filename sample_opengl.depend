@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1743286110 source:c:\users\sarah\documents\prgms\sample_opengl\main.cpp
+	<GL/glew.h>
+	<GL/freeglut.h>
+	<stdio.h>
+	<iostream>
+	"OpenGL445Setup-2025.h"
+
+1737773928 c:\users\sarah\documents\prgms\sample_opengl\opengl445setup-2025.h
+
+1738787017 source:c:\users\sarah\documents\prgms\sample_opengl\test.c
+

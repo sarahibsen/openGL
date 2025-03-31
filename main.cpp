@@ -1,0 +1,185 @@
+/*
+Graphics Prgm 3 for Sarah Ibsen
+Class: CS 445
+
+
+Architecture Structure:
+----------------------
+GLUT generation of an aquarium
+
+*/
+
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+#include <stdio.h>
+#include<iostream> // for debugging
+#include "OpenGL445Setup-2025.h"
+
+const int frameTime = 0;
+bool isAnimating = false;
+bool showMessage = true;
+unsigned int fishDisplayList;
+float fishX = 0.0;
+bool movingLeft = true;
+bool rotating = false;
+float rotationAngle = 0.0f;
+bool rotatingLeft = false;
+
+const float TANK_LEFT = -400.0f;
+const float TANK_RIGHT = 400.0f;
+const float TANK_BOTTOM = -200.0f;
+const float FISH_HALF_WIDTH = 75.0f;  // Adjusted fish width for body collision check
+
+// function to check the boundaries where the fish needs to turn
+void checkBoundaries() {
+    if (movingLeft) {
+        if (fishX - FISH_HALF_WIDTH < TANK_LEFT + 4.0f) {
+            rotating = true;
+            rotatingLeft = true;
+        }
+    } else {
+        if (fishX + FISH_HALF_WIDTH > TANK_RIGHT - 4.0f) {
+            rotating = true;
+            rotatingLeft = false;
+        }
+    }
+}
+
+void setupCamera() {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-400.0f, 400.0f, -400.0f, 400.0f, -900.0f, -100.0f); // Orthographic view
+  //  glTranslatef(0.0, 0.0, -400.0); // Camera is placed at (0, 0, -400)
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void drawSmallFish() {
+    glColor3f(1.0, (126.0/255.0), (4.0/255.0)); // PANTONE Tangelo (orange)
+
+    glPushMatrix();
+    glTranslatef(75.0, 50.0, 400.0);
+
+    glScalef(50.0, 20.0, 10.0); // small fish dimensions
+    glutWireOctahedron();
+    glPopMatrix();
+
+    // drawing of the fish tail : )
+    glPushMatrix();
+    glTranslatef(95.0, 60.0, 410.0); // Slightly behind the fish body (Z direction)
+    glBegin(GL_TRIANGLES);
+        glVertex3f(25.0, -10.0, 20.0);   // Top of tail
+        glVertex3f(50.0, 0.0, 20.0);  // Bottom of tail
+        glVertex3f(50.0, -20.0, 20.0);   // Back tip of tail
+    glEnd();
+    glPopMatrix();
+
+
+}
+
+void drawDecoration() {
+    // in total there are five boxes
+    glColor3f(0.0, 0.5, 0.0); // dark green
+    glPushMatrix();
+    // decoration is placed at the bottom of the tank
+    glTranslatef(TANK_LEFT, 50.0, 400.0);
+    glScalef(50.0, 175.0, 50.0); // all boxes have a depth of 50 units, height of 175 and 50 in width
+    glutWireCube(1.0);
+    glPopMatrix();
+
+
+}
+
+void createFishDisplayList() {
+    fishDisplayList = glGenLists(1);
+    if (fishDisplayList == 0) {
+        printf("Error creating display list\n");
+    return; // Exit if the display list creation fails
+    }
+    glNewList(fishDisplayList, GL_COMPILE);
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, 400.0);
+    glColor3f((191.0 / 255.0), (25.0 / 255.0), (50.0 / 255.0)); // Pantone True Red
+    glScalef(150.0, 50.0, 25.0);
+    glutWireOctahedron();
+    glPopMatrix();
+
+    // creation of the bigger fishes triangle fin
+    glPushMatrix();
+        glBegin(GL_TRIANGLES);
+            glVertex2f(0.0,0.0,0.0);
+        glEnd();
+    glPopMatrix();
+
+    glEndList();
+    printf("Display list created"); // some checks
+}
+
+void display_func() {
+    setupCamera();
+
+    glClearColor((180.0 / 255.0), (220.0 / 255.0), (234.0 / 255.0), 1.0); // Pantone Spun Sugar
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glPushMatrix();
+    glTranslatef(fishX, 0.0f, 0.0f);  // Translate fish based on fishX
+    glCallList(fishDisplayList); // Call the display list for large fish
+    glPopMatrix();
+
+    drawSmallFish(); // Draw the small static fish
+    drawDecoration(); // Draw the decorations
+
+    glutSwapBuffers();
+}
+
+// Timer function for animation
+void timer(int value) {
+    if (!rotating) {
+        if (movingLeft) {
+            fishX -= 5.0;
+            checkBoundaries(); // Check for boundary collision and start rotation if necessary
+        } else {
+            fishX += 5.0;
+            checkBoundaries();
+        }
+    } else {
+        rotationAngle += (rotatingLeft ? 5.0 : -5.0);
+        if (abs(rotationAngle) >= 180.0) {
+            rotating = false;
+            rotationAngle = 0.0;
+            movingLeft = !movingLeft; // Change direction after rotation
+        }
+    }
+
+    glutPostRedisplay();
+    glutTimerFunc(50, timer, 0); // 20 fps
+}
+
+// Keyboard function for quitting
+void keyboardFunc(unsigned char key, int x, int y) {
+    switch (key) {
+        case 'q':
+        case 'Q':
+            exit(0);
+            break;
+    }
+}
+
+int main(int argc, char **argv)
+{
+    glEnable(GL_DEPTH_TEST);
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(800, 800);
+    glutCreateWindow("Fish Tank");
+
+    glewInit();   // Initialize GLEW before using OpenGL functions
+
+    createFishDisplayList();
+    glutDisplayFunc(display_func);
+    glutKeyboardFunc(keyboardFunc);
+    glutTimerFunc(50, timer, 0); // Start the timer animation
+
+    glutMainLoop();
+    return 0;
+}
