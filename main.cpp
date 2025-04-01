@@ -48,8 +48,8 @@ void checkBoundaries() {
 void setupCamera() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-400.0f, 400.0f, -400.0f, 400.0f, -900.0f, -100.0f); // Orthographic view
-  //  glTranslatef(0.0, 0.0, -400.0); // Camera is placed at (0, 0, -400)
+    glOrtho(-400.0f, 400.0f, -400.0f, 400.0f, 900.0f, 100.0f); // Orthographic view
+  //  glTranslatef(0.0, 0.0, -400.0); // Camera is placed at (0, 0, -400) -- putting it in the positive view port sinze we are already set up in the neg
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -58,15 +58,16 @@ void drawSmallFish() {
     glColor3f(1.0, (126.0/255.0), (4.0/255.0)); // PANTONE Tangelo (orange)
 
     glPushMatrix();
-    glTranslatef(75.0, 50.0, 400.0);
+    glPushMatrix();
+    glTranslatef(-82.0, -120.0, -200.0);
 
     glScalef(50.0, 20.0, 10.0); // small fish dimensions
     glutWireOctahedron();
     glPopMatrix();
 
     // drawing of the fish tail : )
-    glPushMatrix();
-    glTranslatef(95.0, 60.0, 410.0); // Slightly behind the fish body (Z direction)
+  //  glPushMatrix();
+    glTranslatef(-64.0, -110.0, -210.0); // Slightly behind the fish body (Z direction)
     glBegin(GL_TRIANGLES);
         glVertex3f(25.0, -10.0, 20.0);   // Top of tail
         glVertex3f(50.0, 0.0, 20.0);  // Bottom of tail
@@ -78,41 +79,118 @@ void drawSmallFish() {
 }
 
 void drawDecoration() {
-    // in total there are five boxes
     glColor3f(0.0, 0.5, 0.0); // dark green
+    const float boxDepth = -400.0f;
+    const float centerX = 75.0f;
+    const float baseY = -400.0f;
+    const float centerBoxHeight = 175.0f;
+    const float halfHeight = centerBoxHeight * 0.5f;
+    const float twoThirdsHeight = centerBoxHeight * (2.0f / 3.0f);
+
+    // --- Center vertical box ---
     glPushMatrix();
-    // decoration is placed at the bottom of the tank
-    glTranslatef(TANK_LEFT, 50.0, 400.0);
-    glScalef(50.0, 175.0, 50.0); // all boxes have a depth of 50 units, height of 175 and 50 in width
+    glTranslatef(centerX, baseY + centerBoxHeight / 2.0f, -400.0f); // Centered vertically
+    glScalef(50.0f, centerBoxHeight, boxDepth);
     glutWireCube(1.0);
     glPopMatrix();
 
+    // --- Left horizontal branch ---
 
+    // 1/2 height
+    glPushMatrix();
+    glTranslatef(centerX - 50.0f, baseY + halfHeight, -400.0f); // Left of center box
+    glScalef(50.0f, 20.0f, boxDepth); // Horizontal branch: wide, shallow
+    glutWireCube(1.0);
+    glPopMatrix();
+
+    // --- Baby vertical branch sitting on top of that horizontal branch ---
+    glPushMatrix();
+
+    // Dimensions of the baby branch
+    float babyWidth = 10.0f;
+    float babyHeight = 25.0f;  // Make it visibly vertical
+    float horizontalBranchHeight = 20.0f;
+
+    // Position:
+    // - X: start at center of horizontal branch (centerX - 50), then offset left toward branch edge
+    // - Y: baseY + halfHeight (height of horizontal branch center), plus half horizontal + half baby = place on top
+    // - Z: same as branch
+    float babyX = centerX - 50.0f - 20.0f; // 20 units to the left of center of horizontal branch
+    float babyY = baseY + halfHeight + (horizontalBranchHeight / 2.0f) + (babyHeight / 2.0f);
+    float babyZ = -400.0f;
+
+    glTranslatef(babyX, babyY, babyZ);
+    glScalef(babyWidth, babyHeight, boxDepth);
+    glutWireCube(1.0);
+    glPopMatrix();
+    // --- Right horizontal branch ---
+
+
+    // 2/3 height
+    glPushMatrix();
+    glTranslatef(centerX + 50.0f, baseY + twoThirdsHeight, -400.0f);
+    glScalef(50.0f, 20.0f, boxDepth);
+    glutWireCube(1.0);
+    glPopMatrix();
+
+    // --- baby vertical branch on top of right 2/3 height branch ---
+    glPushMatrix();
+
+    // Dimensions
+    float babyWidth2 = 10.0f;
+    float babyHeight2 = 25.0f;
+    float horizontalBranchHeight2 = 20.0f;
+
+    // X: move toward the outer (right) edge of the branch
+    float babyX2 = centerX + 50.0f + 20.0f;  // nudged rightward from center
+    float babyY2 = baseY + twoThirdsHeight + (horizontalBranchHeight2 / 2.0f) + (babyHeight2 / 2.0f);
+    float babyZ2 = -400.0f;
+
+    glTranslatef(babyX2, babyY2, babyZ2);
+    glScalef(babyWidth2, babyHeight2, boxDepth);
+    glutWireCube(1.0);
+    glPopMatrix();
 }
+
 
 void createFishDisplayList() {
     fishDisplayList = glGenLists(1);
     if (fishDisplayList == 0) {
         printf("Error creating display list\n");
-    return; // Exit if the display list creation fails
+        return;
     }
+
     glNewList(fishDisplayList, GL_COMPILE);
+
     glPushMatrix();
-    glTranslatef(0.0, 0.0, 400.0);
+
+    // Body of the fish
+  //  glTranslatef(0.0, 0.0, -400.0);
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, -400.0);
     glColor3f((191.0 / 255.0), (25.0 / 255.0), (50.0 / 255.0)); // Pantone True Red
     glScalef(150.0, 50.0, 25.0);
     glutWireOctahedron();
-    glPopMatrix();
 
-    // creation of the bigger fishes triangle fin
-    glPushMatrix();
-        glBegin(GL_TRIANGLES);
-            glVertex2f(0.0,0.0,0.0);
-        glEnd();
+    glPopMatrix(); // Finish scaling body
+
+    //  it rotates with the fish
+   // glPushMatrix();
+
+    // translate relative to the fish's center
+    glTranslatef(95.0, 20.0, -390.0); // based on tail's position behind body
+
+    glBegin(GL_TRIANGLES);
+        glVertex3f(50.0, -20.0, 40.0);   // Top of tail
+        glVertex3f(100.0, 0.0, 40.0);  // Bottom of tail
+        glVertex3f(100.0, -40.0, 40.0);   // Back tip of tail
+    glEnd();
+
+   // glPopMatrix();
     glPopMatrix();
 
     glEndList();
-    printf("Display list created"); // some checks
+    printf("Display list created\n");
 }
 
 void display_func() {
@@ -122,8 +200,18 @@ void display_func() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glPushMatrix();
-    glTranslatef(fishX, 0.0f, 0.0f);  // Translate fish based on fishX
-    glCallList(fishDisplayList); // Call the display list for large fish
+
+    // Step 1: Move to fish position
+    glTranslatef(fishX, 0.0f, 0.0f);
+
+    // Step 2: Move pivot to fish center (z = -400), rotate, then undo pivot translation
+    glTranslatef(0.0f, 0.0f, -400.0f);
+    glRotatef(rotationAngle, 0.0f, 1.0f, 0.0f);  // Rotate around Y axis
+    glTranslatef(0.0f, 0.0f, 400.0f);
+
+    // Step 3: Draw fish
+    glCallList(fishDisplayList);
+
     glPopMatrix();
 
     drawSmallFish(); // Draw the small static fish
